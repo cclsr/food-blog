@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 
 export const metadata = { title: "编辑菜单 · 小食粥记" };
 
@@ -55,12 +56,12 @@ export default async function AdminMenuPage() {
               </div>
               <form action={deleteMenuList}>
                 <input type="hidden" name="id" value={list.id} />
-                <button
-                  type="submit"
+                <ConfirmSubmit
+                  message={`确定删除整份清单「${list.title}」吗？里面的条目会一起删掉，且不可撤销。`}
                   className="text-xs text-destructive hover:underline"
                 >
                   删除整份
-                </button>
+                </ConfirmSubmit>
               </form>
             </div>
           </CardHeader>
@@ -95,9 +96,12 @@ export default async function AdminMenuPage() {
                   <span className="ml-auto text-xs text-muted-foreground">{item.by_who}</span>
                   <form action={deleteMenuItem}>
                     <input type="hidden" name="id" value={item.id} />
-                    <button type="submit" className="text-xs text-destructive hover:underline">
+                    <ConfirmSubmit
+                      message={`确定删除「${item.name}」这一条吗？`}
+                      className="text-xs text-destructive hover:underline"
+                    >
                       删
-                    </button>
+                    </ConfirmSubmit>
                   </form>
                 </li>
               ))}

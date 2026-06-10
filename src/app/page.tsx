@@ -10,6 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+// 每次访问都读实时数据库，站长改了内容立刻生效（不走构建时快照）
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [foods, photos] = await Promise.all([getFoods(), getPhotos()]);
   const latest = foods.slice(0, 3);

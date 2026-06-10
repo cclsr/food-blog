@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 
 export const metadata = { title: "美食分享 · 小食粥记" };
+export const dynamic = "force-dynamic";
 
 export default async function FoodPage() {
   const foods = await getFoods();

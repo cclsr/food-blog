@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 
 export const metadata = { title: "站长后台 · 小食粥记" };
 
@@ -82,12 +83,12 @@ export default async function AdminDashboard() {
                 </Link>
                 <form action={deleteFood}>
                   <input type="hidden" name="slug" value={f.slug} />
-                  <button
-                    type="submit"
+                  <ConfirmSubmit
+                    message={`确定删除食记「${f.title}」吗？此操作不可撤销。`}
                     className="text-sm text-destructive hover:underline"
                   >
                     删除
-                  </button>
+                  </ConfirmSubmit>
                 </form>
               </li>
             ))}

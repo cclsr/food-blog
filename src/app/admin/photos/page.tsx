@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { deletePhoto } from "./actions";
 import { UploadForm } from "./upload-form";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import {
   Card,
   CardContent,
@@ -62,12 +63,12 @@ export default async function AdminPhotosPage() {
                 <form action={deletePhoto}>
                   <input type="hidden" name="id" value={p.id} />
                   <input type="hidden" name="src" value={p.src} />
-                  <button
-                    type="submit"
+                  <ConfirmSubmit
+                    message="确定删除这张照片吗？此操作不可撤销。"
                     className="shrink-0 rounded bg-black/40 px-1.5 py-0.5 text-xs text-white hover:bg-destructive"
                   >
                     删除
-                  </button>
+                  </ConfirmSubmit>
                 </form>
               </div>
             </div>

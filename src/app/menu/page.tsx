@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export const metadata = { title: "朋友菜单 · 小食粥记" };
+export const dynamic = "force-dynamic";
 
 export default async function MenuPage() {
   const menuLists = await getMenuLists();

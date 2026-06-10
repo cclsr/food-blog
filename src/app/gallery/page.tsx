@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPhotos } from "@/lib/queries";
 
 export const metadata = { title: "照片墙 · 小食粥记" };
+export const dynamic = "force-dynamic";
 
 export default async function GalleryPage() {
   const photos = await getPhotos();
