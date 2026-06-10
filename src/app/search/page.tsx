@@ -9,57 +9,59 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 
-export const metadata = { title: "美食分享 · 小食粥记" };
+export const metadata = { title: "搜索 · 小食粥记" };
 export const dynamic = "force-dynamic";
 
-export default async function FoodPage({
+export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { tag } = await searchParams;
+  const { q } = await searchParams;
+  const query = (q ?? "").trim();
+
+  // 在标题、简介、标签、正文里做不区分大小写的关键词匹配
   const all = await getFoods();
-
-  // 收集所有标签（去重、按出现频次排序）
-  const tagCount = new Map<string, number>();
-  for (const f of all) for (const t of f.tags) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
-  const allTags = [...tagCount.keys()].sort((a, b) => tagCount.get(b)! - tagCount.get(a)!);
-
-  const foods = tag ? all.filter((f) => f.tags.includes(tag)) : all;
-
-  const chip = (active: boolean) =>
-    "rounded-full px-3 py-1 text-sm transition-colors " +
-    (active
-      ? "bg-primary text-primary-foreground"
-      : "bg-secondary text-secondary-foreground hover:bg-accent");
+  const kw = query.toLowerCase();
+  const results = query
+    ? all.filter((f) => {
+        const hay = [
+          f.title,
+          f.excerpt,
+          ...f.tags,
+          ...(f.body ?? []),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(kw);
+      })
+    : [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold">美食分享</h1>
-        <p className="mt-2 text-muted-foreground">
-          {tag ? (
-            <>标签「{tag}」下有 {foods.length} 篇。</>
-          ) : (
-            <>做过、吃过的每一道，附上菜谱和心得。共 {foods.length} 篇。</>
-          )}
-        </p>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold">搜索</h1>
+        {query ? (
+          <p className="mt-2 text-muted-foreground">
+            关键词「{query}」找到 {results.length} 篇食记
+          </p>
+        ) : (
+          <p className="mt-2 text-muted-foreground">在上方搜索框输入关键词试试。</p>
+        )}
       </header>
 
-      {/* 标签筛选 */}
-      <div className="mb-8 flex flex-wrap gap-2">
-        <Link href="/food" className={chip(!tag)}>
-          全部
-        </Link>
-        {allTags.map((t) => (
-          <Link key={t} href={`/food?tag=${encodeURIComponent(t)}`} className={chip(t === tag)}>
-            {t}
+      {query && results.length === 0 && (
+        <p className="text-muted-foreground">
+          没找到相关食记，换个词试试？或去{" "}
+          <Link href="/food" className="text-primary hover:underline">
+            浏览全部
           </Link>
-        ))}
-      </div>
+          。
+        </p>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {foods.map((food) => (
+        {results.map((food) => (
           <Link key={food.slug} href={`/food/${food.slug}`} className="group">
             <Card className="h-full overflow-hidden pt-0 transition-shadow group-hover:shadow-md">
               {/* eslint-disable-next-line @next/next/no-img-element */}

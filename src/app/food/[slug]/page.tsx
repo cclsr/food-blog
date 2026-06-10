@@ -1,7 +1,29 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFood } from "@/lib/queries";
+import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { CommentForm } from "./comment-form";
+import { deleteComment } from "./comment-actions";
+
+type Comment = {
+  id: string;
+  author: string;
+  body: string;
+  created_at: string;
+};
+
+// 读评论（评论表还没建时返回空，不让页面崩）
+async function getComments(slug: string): Promise<Comment[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("comments")
+    .select("id, author, body, created_at")
+    .eq("food_slug", slug)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []) as Comment[];
+}
 
 export async function generateMetadata({
   params,
@@ -21,6 +43,23 @@ export default async function FoodDetail({
   const { slug } = await params;
   const food = await getFood(slug);
   if (!food) notFound();
+
+  const comments = await getComments(slug);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAdmin = Boolean(user);
+
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(
+      d.getMinutes()
+    ).padStart(2, "0")}`;
+  };
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-12">
@@ -83,6 +122,49 @@ export default async function FoodDetail({
           </ol>
         </section>
       )}
+
+      {/* 评论区 */}
+      <section className="mt-12 border-t border-border pt-8">
+        <h2 className="mb-4 text-xl font-semibold">
+          💬 评论
+          {comments.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {comments.length}
+            </span>
+          )}
+        </h2>
+
+        <ul className="mb-8 space-y-5">
+          {comments.map((c) => (
+            <li key={c.id} className="text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{c.author}</span>
+                <time className="text-xs text-muted-foreground">
+                  {fmtTime(c.created_at)}
+                </time>
+                {isAdmin && (
+                  <form action={deleteComment} className="ml-auto">
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <button
+                      type="submit"
+                      className="text-xs text-destructive hover:underline"
+                    >
+                      删除
+                    </button>
+                  </form>
+                )}
+              </div>
+              <p className="mt-1 whitespace-pre-wrap leading-6">{c.body}</p>
+            </li>
+          ))}
+          {comments.length === 0 && (
+            <li className="text-sm text-muted-foreground">还没有评论，来抢个沙发 🛋️</li>
+          )}
+        </ul>
+
+        <CommentForm slug={slug} />
+      </section>
     </article>
   );
 }

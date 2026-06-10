@@ -5,44 +5,60 @@ export const metadata = { title: "照片墙 · 小食粥记" };
 export const dynamic = "force-dynamic";
 
 export default async function GalleryPage() {
-  const photos = await getPhotos();
+  // 最新的在最上面，按时间线竖着排下来
+  const photos = [...(await getPhotos())].reverse();
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <header className="mb-8">
+    <div className="mx-auto max-w-2xl px-4 py-12">
+      <header className="mb-10">
         <h1 className="text-3xl font-bold">照片墙</h1>
         <p className="mt-2 text-muted-foreground">
-          那些让人食指大动的瞬间，点击带链接的图可跳到对应食记。
+          那些让人食指大动的瞬间，按时间从新到旧排下来。点带链接的图可跳到对应食记。
         </p>
       </header>
 
-      {/* 瀑布流：用 CSS columns 实现 */}
-      <div className="columns-2 gap-4 sm:columns-3 [&>*]:mb-4">
-        {photos.map((photo, i) => {
-          const figure = (
-            <figure className="group relative overflow-hidden rounded-xl bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+      {photos.length === 0 ? (
+        <p className="text-muted-foreground">还没有照片，去后台传几张吧 📷</p>
+      ) : (
+        <ol className="relative ml-3 border-l-2 border-border">
+          {photos.map((photo, i) => {
+            const img = (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={photo.src}
                 alt={photo.caption}
-                className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="aspect-[4/3] w-full rounded-xl bg-muted object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
-              <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
-                {photo.caption}
-                {photo.foodSlug && <span className="ml-1">· 查看食记 →</span>}
-              </figcaption>
-            </figure>
-          );
-          return photo.foodSlug ? (
-            <Link key={i} href={`/food/${photo.foodSlug}`} className="block break-inside-avoid">
-              {figure}
-            </Link>
-          ) : (
-            <div key={i} className="break-inside-avoid">
-              {figure}
-            </div>
-          );
-        })}
-      </div>
+            );
+            return (
+              <li key={i} className="relative pb-12 pl-8 last:pb-0">
+                {/* 时间线上的圆点 */}
+                <span className="absolute top-1.5 -left-[9px] h-4 w-4 rounded-full border-2 border-background bg-primary" />
+                <figure className="group">
+                  {photo.foodSlug ? (
+                    <Link href={`/food/${photo.foodSlug}`} className="block overflow-hidden rounded-xl">
+                      {img}
+                    </Link>
+                  ) : (
+                    <div className="overflow-hidden rounded-xl">{img}</div>
+                  )}
+                  <figcaption className="mt-2.5 flex items-center gap-2 text-sm">
+                    <span className="font-medium">{photo.caption || "未命名"}</span>
+                    {photo.foodSlug && (
+                      <Link
+                        href={`/food/${photo.foodSlug}`}
+                        className="text-primary hover:underline"
+                      >
+                        查看食记 →
+                      </Link>
+                    )}
+                  </figcaption>
+                </figure>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }
