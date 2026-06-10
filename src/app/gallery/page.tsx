@@ -1,12 +1,24 @@
 import Link from "next/link";
-import { getPhotos } from "@/lib/queries";
+import { getPhotos, getFoods } from "@/lib/queries";
 
 export const metadata = { title: "照片墙 · 小食粥记" };
 export const dynamic = "force-dynamic";
 
+function fmtDate(iso?: string) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
 export default async function GalleryPage() {
-  // 最新的在最上面，按时间线竖着排下来
-  const photos = [...(await getPhotos())].reverse();
+  const [photosAsc, foods] = await Promise.all([getPhotos(), getFoods()]);
+  // 最新的在最上面
+  const photos = [...photosAsc].reverse();
+  // 现存食记的 slug 集合：只有食记还在，照片才可点击跳转
+  const existingSlugs = new Set(foods.map((f) => f.slug));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -22,6 +34,8 @@ export default async function GalleryPage() {
       ) : (
         <ol className="relative ml-3 border-l-2 border-border">
           {photos.map((photo, i) => {
+            const date = fmtDate(photo.createdAt);
+            const linkable = Boolean(photo.foodSlug && existingSlugs.has(photo.foodSlug));
             const img = (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -32,10 +46,16 @@ export default async function GalleryPage() {
             );
             return (
               <li key={i} className="relative pb-12 pl-8 last:pb-0">
-                {/* 时间线上的圆点 */}
+                {/* 时间线圆点 */}
                 <span className="absolute top-1.5 -left-[9px] h-4 w-4 rounded-full border-2 border-background bg-primary" />
+                {/* 圆点旁的日期 */}
+                {date && (
+                  <time className="mb-2 block text-xs font-medium text-muted-foreground">
+                    {date}
+                  </time>
+                )}
                 <figure className="group">
-                  {photo.foodSlug ? (
+                  {linkable ? (
                     <Link href={`/food/${photo.foodSlug}`} className="block overflow-hidden rounded-xl">
                       {img}
                     </Link>
@@ -44,7 +64,7 @@ export default async function GalleryPage() {
                   )}
                   <figcaption className="mt-2.5 flex items-center gap-2 text-sm">
                     <span className="font-medium">{photo.caption || "未命名"}</span>
-                    {photo.foodSlug && (
+                    {linkable && (
                       <Link
                         href={`/food/${photo.foodSlug}`}
                         className="text-primary hover:underline"

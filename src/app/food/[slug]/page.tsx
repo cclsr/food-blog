@@ -51,14 +51,21 @@ export default async function FoodDetail({
   } = await supabase.auth.getUser();
   const isAdmin = Boolean(user);
 
+  // 统一按中国时区（Asia/Shanghai，UTC+8）显示，不受服务器时区影响。
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "";
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(
-      d.getMinutes()
-    ).padStart(2, "0")}`;
+    const parts = new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(d);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
   };
 
   return (

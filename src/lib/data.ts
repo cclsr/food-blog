@@ -30,6 +30,7 @@ export type Photo = {
   src: string;
   caption: string;
   foodSlug?: string; // 关联到某篇美食帖
+  createdAt?: string; // 上传时间（用于时间线）
 };
 
 // 用 loremflickr 拿真实的美食图片（mockup 用），seed 固定保证每次一样

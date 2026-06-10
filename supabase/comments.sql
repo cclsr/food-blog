@@ -1,7 +1,10 @@
 -- ============================================================
--- 评论表（新功能）：访客无需登录即可在食记下留言。
--- 用法：复制本文件 → Supabase SQL Editor → Run（跑一次即可）
+-- 新功能迁移：① 评论表（访客可留言）② 给照片加时间字段（时间线展示）
+-- 用法：复制本文件 → Supabase SQL Editor → Run（跑一次即可；可重复运行）
 -- ============================================================
+
+-- ② 照片加上传时间字段，用于照片墙时间线显示日期
+alter table photos add column if not exists created_at timestamptz not null default now();
 
 create table if not exists comments (
   id         uuid primary key default gen_random_uuid(),
@@ -30,3 +33,18 @@ create policy "public insert comments" on comments
 drop policy if exists "auth delete comments" on comments;
 create policy "auth delete comments" on comments
   for delete to authenticated using (true);
+
+-- ============================================================
+-- ③ 评论管理增强：站长可回复、隐藏评论
+-- ============================================================
+
+-- 隐藏标记：隐藏后访客看不到，但站长后台仍能看到与恢复
+alter table comments add column if not exists hidden boolean not null default false;
+-- 站长回复内容与回复时间
+alter table comments add column if not exists reply text;
+alter table comments add column if not exists reply_at timestamptz;
+
+-- 只有登录的站长能改评论（用于回复 / 隐藏 / 恢复）
+drop policy if exists "auth update comments" on comments;
+create policy "auth update comments" on comments
+  for update to authenticated using (true) with check (true);

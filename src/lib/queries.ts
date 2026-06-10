@@ -82,20 +82,38 @@ export async function getMenuLists(): Promise<MenuList[]> {
 export async function getPhotos(): Promise<Photo[]> {
   if (!isSupabaseConfigured || !supabase) return mockPhotos;
 
-  const { data, error } = await supabase
-    .from("photos")
-    .select("src, caption, food_slug, sort")
-    .order("sort", { ascending: true });
-
-  if (error) {
-    console.error("getPhotos 失败，回退假数据：", error.message);
-    return mockPhotos;
+  // 优先按 created_at 排序（迁移后有此列）；列不存在时退回按 sort
+  let data: Row[] | null = null;
+  {
+    const res = await supabase
+      .from("photos")
+      .select("src, caption, food_slug, sort, created_at")
+      .order("created_at", { ascending: true });
+    if (!res.error) data = res.data as Row[];
+  }
+  if (!data) {
+    const res = await supabase
+      .from("photos")
+      .select("src, caption, food_slug, sort")
+      .order("sort", { ascending: true });
+    if (res.error) {
+      console.error("getPhotos 失败，回退假数据：", res.error.message);
+      return mockPhotos;
+    }
+    data = res.data as Row[];
   }
 
-  type Row = { src: string; caption: string; food_slug: string | null };
-  return (data as Row[]).map((p) => ({
+  return data.map((p) => ({
     src: p.src,
     caption: p.caption,
     foodSlug: p.food_slug ?? undefined,
+    createdAt: p.created_at ?? undefined,
   }));
 }
+
+type Row = {
+  src: string;
+  caption: string;
+  food_slug: string | null;
+  created_at?: string | null;
+};
